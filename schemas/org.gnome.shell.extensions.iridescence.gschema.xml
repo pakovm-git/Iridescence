@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schemalist>
+  <enum id="org.gnome.shell.extensions.iridescence.Tint">
+    <value nick="subtle" value="0"/>
+    <value nick="balanced" value="1"/>
+    <value nick="rich" value="2"/>
+  </enum>
+  <schema id="org.gnome.shell.extensions.iridescence" path="/org/gnome/shell/extensions/iridescence/">
+    <key name="bms-desktop-enabled" type="b"><default>false</default><summary>Apply Blur My Shell desktop preset</summary></key>
+    <key name="bms-desktop-state" type="s"><default>''</default><summary>Changed Blur My Shell values for conditional restoration</summary></key>
+    <key name="tint" enum="org.gnome.shell.extensions.iridescence.Tint"><default>'balanced'</default><summary>Shared tint intensity</summary></key>
+    <key name="transparency" type="b"><default>true</default><summary>Transparent Shell, applications and Overview</summary></key>
+    <key name="shell-light-mode" type="b"><default>true</default><summary>Use light Shell in light mode</summary></key>
+  </schema>
+</schemalist>

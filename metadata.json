@@ -1,0 +1,17 @@
+{
+    "uuid": "iridescence@pakovm",
+    "name": "Iridescence",
+    "description": "Aero-inspired, accent-tinted glass for GNOME Shell and GTK4.",
+    "shell-version": [
+        "49",
+        "50",
+        "51"
+    ],
+    "session-modes": [
+        "user",
+        "unlock-dialog"
+    ],
+    "url": "https://github.com/pakovm-git/Iridescence",
+    "settings-schema": "org.gnome.shell.extensions.iridescence",
+    "version": 1
+}
