@@ -10,8 +10,7 @@ Iridescence brings a coordinated glass appearance to your desktop, combining you
 - Shared tint strength: Subtle, Balanced or Rich.
 - Optional transparency, with an opaque appearance that retains the tint and contrast treatment.
 - A light Shell theme that follows your system appearance, or an always-dark Shell.
-- Consistent styling for menus, Quick Settings, notifications, dialogs and volume/brightness indicators.
-- Optional Blur My Shell Overview integration.
+- Optional Blur My Shell integration.
 - Optional theme access for Flatpak applications.
 
 Cards, toasts, file-selection dialogs and sidebars opened over content retain solid backgrounds for readability.
@@ -123,6 +122,7 @@ See `LICENSE`, `LICENSE-LGPL-2.1` and `NOTICE` in the source repository for lice
 
 You can support development with Bitcoin over Lightning:
 
+<img width="424" height="424" alt="lightning-address" src="https://github.com/user-attachments/assets/c4a19af2-f3f1-4311-8ad2-2577263a68b4" />
+
 **pako@bitbox.cash**
 
-A QR code and copy button are available in the extension’s preferences.
