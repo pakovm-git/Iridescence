@@ -29,7 +29,7 @@ Applications with custom styling may look different.
 Download the extension ZIP, then install it:
 
 ```sh
-gnome-extensions install --force iridescence@pakovm.shell-extension.zip
+gnome-extensions install --force iridescence@pakovm.zip
 ```
 
 Log out and back in, then enable **Iridescence** using Extensions or Extension Manager.
