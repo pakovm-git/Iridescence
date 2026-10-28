@@ -18,7 +18,7 @@ Cards, toasts, file-selection dialogs and sidebars opened over content retain so
 
 ## Compatibility
 
-- GNOME Shell 49 and 50.
+- GNOME Shell 49, 50 and 51.
 - GTK4 and libadwaita applications.
 - GTK3 applications are not supported.
 
