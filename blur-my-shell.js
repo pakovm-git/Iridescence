@@ -48,7 +48,7 @@ export class DesktopIntegration {
         this._settings = settings;
     }
 
-    sync(dark, accent) {
+    sync(dark, accent, transparency = this._settings.get_boolean('transparency')) {
         const original = this._bms.get_value('pipelines');
         if (original.get_type_string() !== 'a{sa{sv}}')
             throw new Error('Unsupported Blur My Shell pipeline format');
@@ -83,7 +83,7 @@ export class DesktopIntegration {
                 ]),
             };
         }
-        const opacity = this._settings.get_boolean('transparency') ? 0.70 : 1;
+        const opacity = transparency ? 0.70 : 1;
         const tint = (dark ? 0.10 : 0.07) * TINTS[this._settings.get_string('tint')];
         const accentAlpha = opacity * tint;
         // These two overlays must combine to the requested opacity, rather than compound it.
@@ -156,8 +156,7 @@ export class DesktopIntegration {
 
     restore() {
         const state = this._settings.get_string('bms-desktop-state');
-        if (!state) return;
-        for (const change of JSON.parse(state)) {
+        for (const change of JSON.parse(state || '[]')) {
             if (!this._bms.settings_schema.list_children().includes(change.child)) continue;
             const settings = this._bms.get_child(change.child);
             if (!settings.settings_schema.has_key(change.key)) continue;

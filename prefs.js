@@ -3,10 +3,8 @@ import Gio from 'gi://Gio';
 import Adw from 'gi://Adw';
 import Gtk from 'gi://Gtk';
 import {ExtensionPreferences} from 'resource:///org/gnome/Shell/Extensions/js/extensions/prefs.js';
-import {readText, writeText} from './files.js';
+import {readText} from './prefs-files.js';
 import {setFlatpakAccess} from './flatpak.js';
-import {setGtkImport} from './gtk-import.js';
-import {makeGtkStyles} from './styles.js';
 
 export const DONATION_ADDRESS = 'pako@bitbox.cash';
 
@@ -14,7 +12,7 @@ export default class IridescencePreferences extends ExtensionPreferences {
     fillPreferencesWindow(window) {
         const settings = this.getSettings();
         settings.delay();
-        window.set_default_size(540, 520);
+        window.set_default_size(540, 580);
         const page = new Adw.PreferencesPage({title: 'Appearance', icon_name: 'preferences-desktop-appearance-symbolic'});
         window.add(page);
         const group = new Adw.PreferencesGroup({title: 'Theme'});
@@ -22,11 +20,17 @@ export default class IridescencePreferences extends ExtensionPreferences {
             model: Gtk.StringList.new(['Subtle', 'Balanced', 'Rich']), selected: settings.get_enum('tint')});
         tint.connect('notify::selected', () => settings.set_enum('tint', tint.selected));
         group.add(tint);
-        for (const [key, title] of [['transparency', 'Transparency'], ['shell-light-mode', 'Light Shell in light mode']]) {
-            const row = new Adw.SwitchRow({title});
-            settings.bind(key, row, 'active', Gio.SettingsBindFlags.DEFAULT);
-            group.add(row);
-        }
+        const opacity = new Adw.ComboRow({title: 'Transparency level',
+            model: Gtk.StringList.new(['Airy', 'Dense', 'Opaque']),
+            selected: settings.get_boolean('transparency') ? settings.get_enum('gtk-opacity') === 90 ? 1 : 0 : 2});
+        opacity.connect('notify::selected', () => {
+            if (opacity.selected < 2) settings.set_enum('gtk-opacity', opacity.selected === 1 ? 90 : 65);
+            settings.set_boolean('transparency', opacity.selected < 2);
+        });
+        group.add(opacity);
+        const light = new Adw.SwitchRow({title: 'Light Shell in light mode'});
+        settings.bind('shell-light-mode', light, 'active', Gio.SettingsBindFlags.DEFAULT);
+        group.add(light);
         this._addApply(group, settings, window);
         this._addBlurGroup(page, window);
         page.add(group);
@@ -115,16 +119,12 @@ export default class IridescencePreferences extends ExtensionPreferences {
     }
 
     _addApply(group, settings, window) {
-        const config = Gio.File.new_for_path(GLib.get_user_config_dir());
-        const file = config.get_child('gtk-4.0').get_child('gtk.css');
-        const stylesheet = config.get_child('iridescence').get_child('gtk.css');
-        const source = readText(this.dir.get_child('themes').get_child('gtk.css')).text;
         const row = new Adw.ActionRow({title: 'Apply appearance',
             subtitle: 'Changes pending.'});
         const button = new Gtk.Button({label: 'Apply', valign: Gtk.Align.CENTER});
         let applying = false;
         const signal = settings.connect('changed', (_settings, key) => {
-            if (['tint', 'transparency', 'shell-light-mode'].includes(key)) {
+            if (!applying && ['tint', 'transparency', 'shell-light-mode', 'gtk-opacity'].includes(key)) {
                 row.subtitle = 'Changes pending.';
                 button.sensitive = !applying;
             }
@@ -136,18 +136,16 @@ export default class IridescencePreferences extends ExtensionPreferences {
         button.connect('clicked', async () => {
             if (applying) return;
             applying = true;
+            group.sensitive = false;
             button.sensitive = false;
             row.subtitle = 'Applying…';
             try {
                 const active = this._isExtensionActive();
-                writeText(stylesheet, makeGtkStyles(settings.get_string('tint'),
-                    settings.get_boolean('transparency') ? 'translucent' : 'solid', source), readText(stylesheet).etag);
-                const ownImport = `@import url("${stylesheet.get_uri()}"); /* iridescence */`;
-                if (active || readText(file).text.replace(/^\uFEFF/, '').split(/\r?\n/).includes(ownImport))
-                    setGtkImport(file, stylesheet, active);
-                settings.apply();
-                if (active) await this._reloadGtk();
-                row.subtitle = !active ? 'Saved. Enable Iridescence, then Apply.' :
+                if (active) {
+                    await this._applyAppearance(settings);
+                    settings.revert();
+                } else settings.apply();
+                row.subtitle = !active ? 'Saved. Enable Iridescence to apply.' :
                     settings.get_has_unapplied() ? 'Changes pending.' : 'Applied. Reopen apps if needed.';
                 button.sensitive = !active || settings.get_has_unapplied();
             } catch (error) {
@@ -158,6 +156,7 @@ export default class IridescencePreferences extends ExtensionPreferences {
                 dialog.present(window);
             } finally {
                 applying = false;
+                group.sensitive = true;
             }
         });
         row.add_suffix(button);
@@ -165,23 +164,14 @@ export default class IridescencePreferences extends ExtensionPreferences {
         group.add(row);
     }
 
-    async _reloadGtk() {
-        const settings = new Gio.Settings({schema_id: 'org.gnome.desktop.a11y.interface'});
-        const original = settings.get_boolean('high-contrast');
-        try {
-            if (!settings.set_boolean('high-contrast', !original))
-                throw new Error('GTK refresh is unavailable. Reopen applications to see the changes.');
-            Gio.Settings.sync();
-            // Apps need time to observe the first write before it is restored.
-            await new Promise(resolve => GLib.timeout_add(GLib.PRIORITY_DEFAULT, 200, () => {
-                resolve();
-                return GLib.SOURCE_REMOVE;
+    _applyAppearance(settings) {
+        const values = new GLib.Variant('(sbbi)', [settings.get_string('tint'), settings.get_boolean('transparency'),
+            settings.get_boolean('shell-light-mode'), settings.get_enum('gtk-opacity')]);
+        return new Promise((resolve, reject) => Gio.DBus.session.call('org.gnome.Shell',
+            '/org/gnome/Shell/Extensions/Iridescence', 'org.gnome.Shell.Extensions.Iridescence', 'ApplyAppearance',
+            values, new GLib.VariantType('()'), Gio.DBusCallFlags.NO_AUTO_START, 5000, null, (connection, result) => {
+                try { connection.call_finish(result); resolve(); } catch (error) { reject(error); }
             }));
-        } finally {
-            if (!settings.set_boolean('high-contrast', original))
-                throw new Error('Could not restore High Contrast. Check Settings → Accessibility.');
-            Gio.Settings.sync();
-        }
     }
 
     _addFlatpakGroup(page, window) {

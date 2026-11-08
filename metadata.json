@@ -7,11 +7,10 @@
         "50",
         "51"
     ],
+    "url": "https://github.com/pakovm-git/Iridescence",
+    "settings-schema": "org.gnome.shell.extensions.iridescence",
     "session-modes": [
         "user",
         "unlock-dialog"
-    ],
-    "url": "https://github.com/pakovm-git/Iridescence",
-    "settings-schema": "org.gnome.shell.extensions.iridescence",
-    "version": 1
+    ]
 }

@@ -1,0 +1,11 @@
+Iridescence derives from Tint my Gnome and Tinted Shell by PakoVM.
+GTK @import integration was inspired by pull request #2 by snelbinderr:
+https://github.com/pakovm-git/Tint-my-Gnome/pull/2
+
+The light palette in themes/shell-light.css was supplied by the user from a tinted
+Luminus theme. Its original notice credits Red Hat, Inc. (2009, 2015) and Intel
+Corporation (2009), under GNU LGPL version 2.1. That notice is preserved in the
+source file. The palette's layout declarations are excluded from generated CSS.
+
+The Tinted Shell GPL version 3 license is included in LICENSE. Original source
+notices are retained in themes/. Iridescence is distributed as a GNOME Shell extension.

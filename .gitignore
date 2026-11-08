@@ -1,0 +1,8 @@
+dist/
+output/*
+!output/contrast-strength-reference.json
+!output/shadow-strength-reference.json
+schemas/gschemas.compiled
+__pycache__/
+*.py[cod]
+*.log

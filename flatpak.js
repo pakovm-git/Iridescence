@@ -1,6 +1,7 @@
 import GLib from 'gi://GLib';
 import Gio from 'gi://Gio';
-import {readText, writeText} from './files.js';
+import {readText} from './prefs-files.js';
+import {writeText} from './files.js';
 
 const GRANTS = ['xdg-config/gtk-4.0:ro', 'xdg-config/iridescence:ro'];
 const pathOf = entry => entry.replace(/^!/, '').replace(/:(?:ro|rw|create)$/, '');

@@ -6,9 +6,16 @@ export function decodeUtf8(bytes) {
     return (bom ? '\uFEFF' : '') + new TextDecoder('utf-8', {fatal: true}).decode(bom ? bytes.subarray(3) : bytes);
 }
 
-export function readText(file) {
+export async function readText(file, cancellable = null) {
     try {
-        const [, bytes, etag] = file.load_contents(null);
+        const [bytes, etag] = await new Promise((resolve, reject) => {
+            file.load_contents_async(cancellable, (source, result) => {
+                try {
+                    const [, contents, tag] = source.load_contents_finish(result);
+                    resolve([contents, tag]);
+                } catch (error) { reject(error); }
+            });
+        });
         return {text: decodeUtf8(bytes), etag};
     } catch (error) {
         if (error.matches?.(Gio.IOErrorEnum, Gio.IOErrorEnum.NOT_FOUND))

@@ -1,0 +1,247 @@
+{
+  "active": "B",
+  "units": "CSS px and RGBA alpha. Active B: internal controls reduced30%; external surfaces retained. Banner/OSD/popup-menu blur10px and vertical offset10px avoids overview panel clipping. Historical A/C and previous B values are retained.",
+  "options": {
+    "A": {
+      "shellCompact": {
+        "light": "0 1px 3px 0 rgba(0, 0, 0, 0.045)",
+        "dark": "0 1px 3px 0 rgba(0, 0, 0, 0.09)"
+      },
+      "shellControls": {
+        "light": "0 1px 6px 0 rgba(0, 0, 0, 0.09)",
+        "dark": "0 1px 6px 0 rgba(0, 0, 0, 0.18)"
+      },
+      "shellBanners": {
+        "light": "0 2px 12px 0 rgba(0, 0, 0, 0.09)",
+        "dark": "0 2px 12px 0 rgba(0, 0, 0, 0.18)"
+      },
+      "gtkWidgets": {
+        "light": "0 1px 6px rgba(0, 0, 0, 0.12)",
+        "dark": "0 1px 6px rgba(0, 0, 0, 0.24)"
+      }
+    },
+    "B": {
+      "shellCompact": {
+        "light": "0 1px 4px 0 rgba(0, 0, 0, 0.0735)",
+        "dark": "0 1px 4px 0 rgba(0, 0, 0, 0.0735)"
+      },
+      "shellControls": {
+        "light": "0 1px 8px 0 rgba(0, 0, 0, 0.147)",
+        "dark": "0 1px 8px 0 rgba(0, 0, 0, 0.147)"
+      },
+      "shellBanners": {
+        "light": "0 10px 10px 0 rgba(0, 0, 0, 0.21)",
+        "dark": "0 10px 10px 0 rgba(0, 0, 0, 0.21)"
+      },
+      "gtkWidgets": {
+        "light": "0 1px 8px rgba(0, 0, 0, 0.196)",
+        "dark": "0 1px 8px rgba(0, 0, 0, 0.196)"
+      }
+    },
+    "C": {
+      "shellCompact": {
+        "light": "0 1px 5px 0 rgba(0, 0, 0, 0.06)",
+        "dark": "0 1px 5px 0 rgba(0, 0, 0, 0.12)"
+      },
+      "shellControls": {
+        "light": "0 1px 10px 0 rgba(0, 0, 0, 0.12)",
+        "dark": "0 1px 10px 0 rgba(0, 0, 0, 0.24)"
+      },
+      "shellBanners": {
+        "light": "0 2px 20px 0 rgba(0, 0, 0, 0.12)",
+        "dark": "0 2px 20px 0 rgba(0, 0, 0, 0.24)"
+      },
+      "gtkWidgets": {
+        "light": "0 1px 10px rgba(0, 0, 0, 0.16)",
+        "dark": "0 1px 10px rgba(0, 0, 0, 0.32)"
+      }
+    }
+  },
+  "scope": {
+    "gtk": "Native exterior box-shadows cover controls including focus states, highlighted sidebars/menu rows, cards and toasts. Existing inset strokes and opaque backings remain in place.",
+    "shell": "Source-derived native shadow effects restore controls and floating banners in both variants without replacing inset outlines or changing layout. Native focus/hover states stay intact.",
+    "notificationList": "No surface shadows on notification-list cards.",
+    "previousInventory": "native-contrast/removed-extra-shadows.json",
+    "searchEntry": "Shell overview search: 0 1px 2px 0 rgba(0, 0, 0, 0.0735), shared by all palettes/tints."
+  },
+  "outlineRegressionSelectors": [
+    ".screenshot-ui-show-pointer-button",
+    ".screenshot-ui-type-button",
+    ".quick-toggle:checked",
+    ".calendar .calendar-day.calendar-today",
+    ".popup-menu-content .icon-button.default",
+    ".search-section-content .icon-button.default",
+    ".osd-window .icon-button.default",
+    "#keyboard .icon-button.default",
+    ".popup-menu-content .button.default",
+    ".search-section-content .button.default",
+    ".osd-window .button.default",
+    "#keyboard .button.default",
+    ".switcher-list .icon-button.default",
+    ".app-folder-dialog .icon-button.default",
+    "#dash .icon-button.default",
+    ".screenshot-ui-panel .icon-button.default",
+    ".switcher-list .button.default",
+    ".app-folder-dialog .button.default",
+    "#dash .button.default",
+    ".screenshot-ui-panel .button.default",
+    ".quick-toggle:hover:checked",
+    ".calendar .calendar-day.calendar-today:hover",
+    ".popup-menu-content .icon-button.default:hover",
+    ".search-section-content .icon-button.default:hover",
+    ".osd-window .icon-button.default:hover",
+    "#keyboard .icon-button.default:hover",
+    ".popup-menu-content .button.default:hover",
+    ".search-section-content .button.default:hover",
+    ".osd-window .button.default:hover",
+    "#keyboard .button.default:hover",
+    ".switcher-list .icon-button.default:hover",
+    ".app-folder-dialog .icon-button.default:hover",
+    "#dash .icon-button.default:hover",
+    ".screenshot-ui-panel .icon-button.default:hover",
+    ".switcher-list .button.default:hover",
+    ".app-folder-dialog .button.default:hover",
+    "#dash .button.default:hover",
+    ".screenshot-ui-panel .button.default:hover",
+    ".quick-toggle:active:checked",
+    ".calendar .calendar-day.calendar-today:active",
+    ".popup-menu-content .icon-button.default:active",
+    ".search-section-content .icon-button.default:active",
+    ".osd-window .icon-button.default:active",
+    "#keyboard .icon-button.default:active",
+    ".popup-menu-content .button.default:active",
+    ".search-section-content .button.default:active",
+    ".osd-window .button.default:active",
+    "#keyboard .button.default:active",
+    ".switcher-list .icon-button.default:active",
+    ".app-folder-dialog .icon-button.default:active",
+    "#dash .icon-button.default:active",
+    ".screenshot-ui-panel .icon-button.default:active",
+    ".switcher-list .button.default:active",
+    ".app-folder-dialog .button.default:active",
+    "#dash .button.default:active",
+    ".screenshot-ui-panel .button.default:active",
+    ".quick-toggle:active:hover:checked",
+    ".calendar .calendar-day.calendar-today:active:hover",
+    ".popup-menu-content .icon-button.default:active:hover",
+    ".search-section-content .icon-button.default:active:hover",
+    ".osd-window .icon-button.default:active:hover",
+    "#keyboard .icon-button.default:active:hover",
+    ".popup-menu-content .button.default:active:hover",
+    ".search-section-content .button.default:active:hover",
+    ".osd-window .button.default:active:hover",
+    "#keyboard .button.default:active:hover",
+    ".switcher-list .icon-button.default:active:hover",
+    ".app-folder-dialog .icon-button.default:active:hover",
+    "#dash .icon-button.default:active:hover",
+    ".screenshot-ui-panel .icon-button.default:active:hover",
+    ".switcher-list .button.default:active:hover",
+    ".app-folder-dialog .button.default:active:hover",
+    "#dash .button.default:active:hover",
+    ".screenshot-ui-panel .button.default:active:hover",
+    ".osd-window",
+    ".screenshot-ui-panel",
+    ".popup-sub-menu",
+    ".message-media-control:hover",
+    ".message-media-control:active",
+    ".pad-osd-window",
+    ".quick-toggle-has-menu .quick-toggle-menu-button:checked",
+    ".quick-toggle-has-menu .quick-toggle-menu-button:checked:hover",
+    ".quick-toggle-has-menu .quick-toggle-menu-button:checked:active",
+    ".quick-toggle-has-menu .quick-toggle-menu-button:checked:active:hover",
+    ".quick-toggle-menu .header .icon.active",
+    ".search-section-content",
+    ".page-navigation-arrow",
+    ".popup-menu-content .keyboard-brightness-level .button:checked",
+    ".search-section-content .keyboard-brightness-level .button:checked",
+    ".osd-window .keyboard-brightness-level .button:checked",
+    "#keyboard .keyboard-brightness-level .button:checked",
+    ".popup-menu-content .quick-toggle:checked",
+    ".search-section-content .quick-toggle:checked",
+    ".osd-window .quick-toggle:checked",
+    "#keyboard .quick-toggle:checked",
+    ".switcher-list .keyboard-brightness-level .button:checked",
+    ".app-folder-dialog .keyboard-brightness-level .button:checked",
+    ".screenshot-ui-panel .keyboard-brightness-level .button:checked",
+    ".switcher-list .quick-toggle:checked",
+    ".app-folder-dialog .quick-toggle:checked",
+    "#dash .quick-toggle:checked",
+    ".screenshot-ui-panel .quick-toggle:checked",
+    ".popup-menu-content .keyboard-brightness-level .button:hover:checked",
+    ".search-section-content .keyboard-brightness-level .button:hover:checked",
+    ".osd-window .keyboard-brightness-level .button:hover:checked",
+    "#keyboard .keyboard-brightness-level .button:hover:checked",
+    ".popup-menu-content .quick-toggle:hover:checked",
+    ".search-section-content .quick-toggle:hover:checked",
+    ".osd-window .quick-toggle:hover:checked",
+    "#keyboard .quick-toggle:hover:checked",
+    ".switcher-list .keyboard-brightness-level .button:hover:checked",
+    ".app-folder-dialog .keyboard-brightness-level .button:hover:checked",
+    ".screenshot-ui-panel .keyboard-brightness-level .button:hover:checked",
+    ".switcher-list .quick-toggle:hover:checked",
+    ".app-folder-dialog .quick-toggle:hover:checked",
+    "#dash .quick-toggle:hover:checked",
+    ".screenshot-ui-panel .quick-toggle:hover:checked",
+    ".popup-menu-content .keyboard-brightness-level .button:active:checked",
+    ".search-section-content .keyboard-brightness-level .button:active:checked",
+    ".osd-window .keyboard-brightness-level .button:active:checked",
+    "#keyboard .keyboard-brightness-level .button:active:checked",
+    ".popup-menu-content .quick-toggle:active:checked",
+    ".search-section-content .quick-toggle:active:checked",
+    ".osd-window .quick-toggle:active:checked",
+    "#keyboard .quick-toggle:active:checked",
+    ".switcher-list .keyboard-brightness-level .button:active:checked",
+    ".app-folder-dialog .keyboard-brightness-level .button:active:checked",
+    ".screenshot-ui-panel .keyboard-brightness-level .button:active:checked",
+    ".switcher-list .quick-toggle:active:checked",
+    ".app-folder-dialog .quick-toggle:active:checked",
+    "#dash .quick-toggle:active:checked",
+    ".screenshot-ui-panel .quick-toggle:active:checked",
+    ".popup-menu-content .keyboard-brightness-level .button:active:hover:checked",
+    ".search-section-content .keyboard-brightness-level .button:active:hover:checked",
+    ".osd-window .keyboard-brightness-level .button:active:hover:checked",
+    "#keyboard .keyboard-brightness-level .button:active:hover:checked",
+    ".popup-menu-content .quick-toggle:active:hover:checked",
+    ".search-section-content .quick-toggle:active:hover:checked",
+    ".osd-window .quick-toggle:active:hover:checked",
+    "#keyboard .quick-toggle:active:hover:checked",
+    ".switcher-list .keyboard-brightness-level .button:active:hover:checked",
+    ".app-folder-dialog .keyboard-brightness-level .button:active:hover:checked",
+    ".screenshot-ui-panel .keyboard-brightness-level .button:active:hover:checked",
+    ".switcher-list .quick-toggle:active:hover:checked",
+    ".app-folder-dialog .quick-toggle:active:hover:checked",
+    "#dash .quick-toggle:active:hover:checked",
+    ".screenshot-ui-panel .quick-toggle:active:hover:checked"
+  ],
+  "beforeInternalReduction": {
+    "shellCompact": {
+      "light": "0 1px 4px 0 rgba(0, 0, 0, 0.105)",
+      "dark": "0 1px 4px 0 rgba(0, 0, 0, 0.105)"
+    },
+    "shellControls": {
+      "light": "0 1px 8px 0 rgba(0, 0, 0, 0.21)",
+      "dark": "0 1px 8px 0 rgba(0, 0, 0, 0.21)"
+    },
+    "shellBanners": {
+      "light": "0 2px 16px 0 rgba(0, 0, 0, 0.21)",
+      "dark": "0 2px 16px 0 rgba(0, 0, 0, 0.21)"
+    },
+    "gtkWidgets": {
+      "light": "0 1px 8px rgba(0, 0, 0, 0.28)",
+      "dark": "0 1px 8px rgba(0, 0, 0, 0.28)"
+    }
+  },
+  "preservedSurfaces": {
+    "shell": "Ordinary surface strength0.21, compact0.105. Notification banners, shared OSD roots and popup-menu roots use0 10px 10px 0 rgba(0, 0, 0, 0.21); OSD children and tablet-mapping overlay retain0 1px 8px 0 rgba(0, 0, 0, 0.21).",
+    "gtk": "0 1px 8px rgba(0, 0, 0, 0.28) on toast, floating status, dragged tabs and OSD."
+  },
+  "beforeNotificationOsdReduction": {
+    "light": "0 16px 16px 0 rgba(0, 0, 0, 0.21)",
+    "dark": "0 16px 16px 0 rgba(0, 0, 0, 0.21)"
+  },
+  "switcherPopup": {
+    "light": "0 8px 8px 0 rgba(0, 0, 0, 0.2)",
+    "dark": "0 8px 8px 0 rgba(0, 0, 0, 0.2)",
+    "previousLight": "0 8px 8px 0 rgba(0, 0, 0, 0.05)"
+  }
+}

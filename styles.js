@@ -1,3 +1,6 @@
+import {GTK_CONTRAST, makeShellContrast} from './contrast.js';
+import {makeGtkShadows, makeShellShadows} from './shadows.js';
+
 export const TINTS = {subtle: 0.5, balanced: 1, rich: 1.5};
 export const OPACITY = {solid: 1, translucent: 0.65};
 
@@ -65,7 +68,7 @@ function fadeColors(value, opacity) {
         const color = value.slice(match.index, end);
         if (color !== 'transparent') {
             // Subtraction is enough for opaque colors; partial alpha needs multiplication.
-            edits.push([match.index, end, colorAlpha(color) === 1 ? `st-transparentize(${color}, ${1 - opacity})`
+            edits.push([match.index, end, colorAlpha(color) === 1 ? `st-transparentize(${color}, ${Number((1 - opacity).toFixed(2))})`
                 : `st-mix(${color}, st-transparentize(${color}, 1), ${opacity * 100}%)`]);
         }
     }
@@ -74,85 +77,32 @@ function fadeColors(value, opacity) {
     return value;
 }
 
-function shellContrast(css, dark, scopes, edge, nativeSource) {
-    const namesOf = selector => selector.trim().split(/\s+|>/).at(-1).replace(/:[\w-]+/g, '').split(/[.#]/).filter(Boolean);
-    const selected = new Set(['quick-toggle', 'background-apps-quick-toggle', 'quick-toggle-menu-button', 'power-item', 'message',
-        'notification-banner', 'message-close-button', 'message-expand-button', 'message-collapse-button', 'notification-button',
-        'message-media-control', 'events-button', 'world-clocks-button', 'weather-button', 'pager-button',
-        'datemenu-today-button', 'search-entry', 'folder-name-entry', 'list-search-result',
-        'search-provider-icon', 'page-navigation-arrow', 'keyboard-key', 'item-box',
-        'overview-icon', 'overview-tile', 'grid-search-result', 'app-folder', 'dash-background',
-        'switcher-list', 'osd-window', 'pad-osd-window', 'screenshot-ui-panel', 'screenshot-ui-type-button',
-        'screenshot-ui-shot-cast-button', 'screenshot-ui-show-pointer-button', 'popup-menu-item', 'popup-sub-menu',
-        'quick-toggle-menu', 'calendar-day', 'calendar-month-label', 'search-section-content', 'window-close', 'screenshot-ui-close-button',
-        'message-themed-icon', 'system-action-icon', 'modal-dialog', 'modal-dialog-button', 'audio-selection-device']);
-    const nativeShadows = new Map();
-    for (const [, selectors, body] of (nativeSource + css).replace(/\/\*[\s\S]*?\*\//g, '').matchAll(/([^{}]+)\{([^{}]*)\}/g)) {
-        const shadow = [...body.matchAll(/box-shadow\s*:\s*([^;{}]+)/g)].at(-1)?.[1];
-        if (shadow) for (const selector of selectors.split(','))
-            if (namesOf(selector).some(name => selected.has(name))) nativeShadows.set(selector.trim(), shadow);
-    }
-    const seen = new Set();
-    const result = css.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^[ \t]+/gm, '').replace(/([;{}])\s*\n/g, '$1').replace(/([^{}]+)\{([^{}]*)\}/g, (rule, selectors, body) => {
-        const declaredFill = [...body.matchAll(/background(?:-color)?\s*:\s*([^;{}]+)/g)].at(-1)?.[1].replace(/\s*!important\s*$/, '').trim();
-        const groups = new Map();
+// Reuse the installed authentication layout without importing its paint rules.
+function nativePasswordGeometry(css) {
+    const rules = [];
+    // Raise every imported selector by one class so native relative specificity is preserved.
+    for (const [, selectors, body] of css.replace(/\/\*[\s\S]*?\*\//g, '').matchAll(/([^{}]+)\{([^{}]*)\}/g)) {
+        const geometry = [...body.matchAll(/(?:^|;)\s*(?:width|height|spacing|icon-size|border-radius|padding(?:-[\w-]+)?|margin(?:-[\w-]+)?)\s*:[^;{}]+/g)]
+            .map(match => match[0].replace(/^;/, '').trim()).join(';');
+        if (!geometry) continue;
+        const scoped = [];
         for (const selector of selectors.split(',')) {
-            const clean = selector.replace(/\/\*[\s\S]*?\*\//g, '').trim();
-            seen.add(clean);
-            const names = namesOf(clean);
-            const originalShadow = nativeShadows.get(clean) ?? names.map(name => nativeShadows.get(`.${name}`)).find(Boolean);
-            const shared = names.some(name => ['button', 'icon-button', 'StEntry'].includes(name)) &&
-                scopes.some(scope => scope !== '.candidate-popup-content' && clean.startsWith(`${scope} `));
-            // Dialog state combinations inherit the same edge instead of repeating its declarations.
-            const dialogState = /modal-dialog-button:|audio-selection-device:[\w-]+:/.test(clean);
-            // Unfilled Dash wrappers must not outrank native drag-target rings.
-            const eligible = !dialogState && !(clean.startsWith('#dash ') && declaredFill === 'transparent') && !/LookingGlass|\.lg-|login-dialog|unlock-dialog|candidate-popup|:focus|:insensitive/.test(clean) &&
-                (shared || names.some(name => selected.has(name)) || clean.startsWith('.word-suggestions ') || /\.quick-toggle-menu \.header \.icon/.test(clean));
-            const fill = declaredFill;
-            let changed = body;
-            // Inset shadows can be focus rings or painted fills; never replace them.
-            if (eligible && fill && !/box-shadow\s*:[^;]*(?:inset|!important)/.test(body)) {
-                const filled = fill !== 'none' && colorAlpha(fill) > 0;
-                // Keep contrast strokes out of control layout.
-                if (clean.startsWith('#dash ') && names.includes('overview-icon'))
-                    changed = body.trim() + `border-width:0;box-shadow:${filled ? `inset 0 0 0 1px ${edge}` : 'none'};`;
-                else if (names.some(name => ['message-collapse-button', 'message-themed-icon', 'system-action-icon'].includes(name))) {
-                    // Pull the edge inside the 4px spacer, leaving 1px around the painted face.
-                    const stroke = names.includes('message-collapse-button') ? '0 0 0 -3px' : 'inset 0 0 0 1px';
-                    changed = body.trim() + `box-shadow: ${filled ? `${stroke} ${edge}` : 'none'};`;
-                }
-                else {
-                    const compact = /#dash\b|switcher-list|item-box|overview-icon|overview-tile|grid-search-result|app-folder|screenshot-ui/.test(clean);
-                    const shadow = filled ? `0 1px ${compact ? 2 : 4}px 0 rgba(0, 0, 0, ${(dark ? 0.12 : 0.06) / (compact ? 2 : 1)})` : 'none';
-                    const border = names.some(name => ['search-section-content', 'window-close', 'screenshot-ui-close-button'].includes(name)) ? 'border-color:' : 'border:1px solid ';
-                    changed = body.trim() + `${border}${filled ? edge : 'transparent'};box-shadow:${names.includes('message') && !names.includes('notification-banner') ? 'none' : originalShadow && !/none|transparent/.test(originalShadow) ? originalShadow : shadow};`;
-                }
-            } else if (originalShadow && !/none|transparent/.test(originalShadow) && !/box-shadow\s*:/.test(body)) {
-                changed = body.trim() + `box-shadow: ${originalShadow};`;
-            }
-            const group = groups.get(changed) ?? [];
-            group.push(selector); groups.set(changed, group);
+            const clean = selector.trim();
+            if (/^\.unlock-dialog \.login-dialog-(?:prompt-layout|input-well|prompt-entry-area|prompt-entry|default-button-well)(?:[ :].*)?$/.test(clean))
+                scoped.push(clean.replace('.unlock-dialog', '.unlock-dialog.unlock-dialog'));
+            else if (/^StEntry(?:[ :]|$)/.test(clean) || /^\.login-dialog-button-box$/.test(clean) || /^\.login-dialog-button\.next-button(?:[ :.].*)?$/.test(clean))
+                scoped.push(`.unlock-dialog ${clean}`);
         }
-        return [...groups].map(([value, group]) => `${group.join(',')}{${value}}`).join('\n');
-    });
-    // Reapply original visible shadows after adding edges and shadows to unshadowed controls.
-    return result + '\n' + [...nativeShadows].filter(([selector, shadow]) => {
-        if (seen.has(selector)) return false;
-        const color = shadow.match(/((?:rgba?|st-[\w-]+)\(.*\)|#[\da-f]{3,8}|transparent|black|white)\s*(?:!important)?$/)?.[1];
-        return !/^none$/.test(shadow) && (!color || colorAlpha(color) > 0);
-    }).map(([selector, shadow]) => `${selector} { box-shadow: ${shadow}; }`).join('\n') + `
-#dash .overview-tile { border-width: 0 !important; box-shadow: none; }
-#dash .overview-tile:drop { box-shadow: ${dark ? nativeShadows.get('.overview-tile:drop') ?? 'none' : 'none'}; }
-.message { box-shadow: none; }
-.notification-banner, .notification-banner:hover, .notification-banner:active, .notification-banner:active:hover { box-shadow: 0 2px 8px 0 rgba(0, 0, 0, ${dark ? 0.12 : 0.06}); }
-`;
+        if (scoped.length) rules.push(`${scoped.join(',')}{${geometry};}`);
+    }
+    return '\n/* Installed native password geometry. */\n' + rules.join('\n');
 }
 
-export function makeShellStyles(source, dark, {tint = 'balanced', transparency = 'translucent'} = {}, nativeSource = '') {
-    if (!(tint in TINTS) || !(transparency in OPACITY))
+export function makeShellStyles(source, dark, {tint = 'balanced', transparency = 'translucent', opacity = 65} = {}, native = '') {
+    if (!(tint in TINTS) || !(transparency in OPACITY) || ![65, 90].includes(opacity))
         throw new Error('Unknown Iridescence preset');
     const factor = TINTS[tint];
-    const alpha = OPACITY[transparency];
+    const alpha = transparency === 'solid' ? 1 : opacity / 100;
     const outer = new Set(['panel', 'popup-menu-content', 'popup-sub-menu', 'candidate-popup-content',
         'osd-window', 'pad-osd-window', 'dash-background', 'switcher-list', 'search-section-content',
         'screenshot-ui-panel', 'app-folder-dialog', 'quick-toggle-menu', 'keyboard', 'modal-dialog']);
@@ -180,12 +130,16 @@ export function makeShellStyles(source, dark, {tint = 'balanced', transparency =
     const controlOverrides = new Map();
     let result = css.replace(/([^{}]+)\{([^{}]*)\}/g, (rule, selectors, body) => {
         const output = new Map();
+        const authGeometry = /(^|;)\s*(?:width|height|spacing|icon-size|border-radius|padding(?:-[\w-]+)?|margin(?:-[\w-]+)?)\s*:[^;{}]+/g;
         function add(selector, transformed) {
             const group = output.get(transformed) ?? [];
             group.push(selector);
             output.set(transformed, group);
         }
         function transform(clean, scoped = false) {
+            // Let the installed Shell supply authentication geometry; the light baseline predates the overlaid submit button.
+            if (/^(?:(?:\.login-dialog|\.unlock-dialog) \.login-dialog-prompt-(?:layout|entry)|\.login-dialog-button-box)$/.test(clean))
+                return body.replace(authGeometry, '$1');
             const last = clean.split(/\s+|>/).at(-1);
             const names = last.replace(/:[\w-]+/g, '').split(/[.#]/);
             const panel = /^#panel(?:[:.][\w-]+)*$/.test(clean);
@@ -245,20 +199,24 @@ export function makeShellStyles(source, dark, {tint = 'balanced', transparency =
     result += `\n#panel { border-bottom: 0; box-shadow: none; }\n#panel .iridescence-panel-edge { background-color: ${fadeColors(edge, alpha)}; }\n`;
     result += `
 .message .message-header .message-close-button { padding: 6px; }
-.notification-banner { border-width: 1px; }
 .quick-toggle-menu { margin-left: 0; margin-right: 0; }
+.switcher-list { box-shadow: 0 8px 8px 0 rgba(0, 0, 0, 0.2); }
 .unlock-dialog-notifications-container { width: 29em; }
 .magnifier-zoom-region.full-screen { border-width: 0; }
 `;
     result += '#panel:overview .iridescence-panel-edge { background-color: transparent; }\n';
-    return shellContrast(result, dark, scopes, edge, nativeSource) + `
-.popup-menu-content { border-color: ${edge}; }
-.app-folder-dialog { box-shadow: inset 0 0 0 1px ${edge}; }
-`;
+    const contrast = makeShellContrast(dark, factor);
+    // Keep native drag feedback when the corresponding high-contrast fill is not imported.
+    return result + contrast + `
+.overview-tile:drop, .grid-search-result:drop { box-shadow: inset 0 0 0 1px st-transparentize(-st-accent-color, 0.2); }
+` + (dark ? `
+#dash .dash-item-container .overview-tile:drop,
+#dash .dash-item-container .grid-search-result:drop { box-shadow: inset 0 0 0 1px st-transparentize(-st-accent-color, 0.2); }
+` : '') + makeShellShadows(dark, result, scopes, colorAlpha) + nativePasswordGeometry(native);
 }
 
-export function makeGtkStyles(tint, transparency, source) {
-    if (!(tint in TINTS) || !(transparency in OPACITY))
+export function makeGtkStyles(tint, transparency, source, opacity = 90) {
+    if (!(tint in TINTS) || !(transparency in OPACITY) || ![65, 90].includes(opacity))
         throw new Error('Unknown Iridescence preset');
     const css = source.replace(/(@accent_bg_color,\s*)([\d.]+)/g,
         (_match, prefix, weight) => `${prefix}${Number((Number(weight) * TINTS[tint]).toFixed(4))}`);
@@ -266,21 +224,12 @@ export function makeGtkStyles(tint, transparency, source) {
     const flat = ['button.flat', 'menubutton.flat > button', 'splitbutton.flat button',
         ...['headerbar', '.toolbar', 'actionbar', 'searchbar'].map(parent =>
             `${parent} button:not(.raised):not(.suggested-action):not(.destructive-action):not(.opaque)`)];
-    const button = 'button:not(.card):not(.link):not(.inline):not(.accent-button):not(:disabled):not(:focus-visible)';
-    const highlights = [
-        ...['list:not(.boxed-list):not(.content):not(.boxed-list-separate) > row', 'listview > row', 'gridview > child'].flatMap(selector =>
-            ['.activatable:hover', '.activatable:active', ':selected', '.activatable.has-open-popup'].map(state => selector + state)),
-        ...['flowbox > flowboxchild', 'popover.menu modelbutton', 'tabbar tabbox:not(.single-tab) > tabboxchild:not(:focus-visible) tab'].flatMap(selector =>
-            [':hover', ':active', ':selected'].map(state => selector + state)),
-        ...['toggle-group > toggle', 'notebook > header > tabs > tab'].flatMap(selector =>
-            [':hover', ':active', ':checked', '.keyboard-activating'].map(state => selector + state)),
-    ].map(selector => selector + ':not(:disabled):not(:focus-visible):not(:drop(active))');
-    return (transparency === 'solid' ? css : css.replace(/@define-color (\w+) ([^;]+);/g, (declaration, name, color) => {
+    const styled = (transparency === 'solid' ? css : css.replace(/@define-color (\w+) ([^;]+);/g, (declaration, name, color) => {
         // Composite the original card fill over a solid window; keep native interaction rules.
         if (name === 'card_bg_color')
             return `${declaration}\n    @define-color iridescence_solid_card_bg_color ${color.replace(/rgba\(([^)]+), ([\d.]+)\)/g, 'mix(@iridescence_solid_window_bg_color, rgb($1), $2)')};`;
         if (!surfaces.test(name)) return declaration;
-        return `@define-color iridescence_solid_${name} ${color};\n    @define-color ${name} alpha(${color}, ${name === 'window_bg_color' ? OPACITY[transparency] : name.includes('sidebar') ? 0.35 : 0.1});`;
+        return `@define-color iridescence_solid_${name} ${color};\n    @define-color ${name} alpha(${color}, ${name === 'window_bg_color' ? opacity / 100 : name.includes('sidebar') ? 0.35 : 0.1});`;
     }) + `
 popover, dialog-host > dialog, window.dialog, window.messagedialog, window.nautilus-file-chooser,
 overlay-split-view > .background, overlay-split-view > .overlay-pane {
@@ -293,7 +242,7 @@ overlay-split-view > .background, overlay-split-view > .overlay-pane {
     --secondary-sidebar-bg-color: @iridescence_solid_secondary_sidebar_bg_color;
     --secondary-sidebar-backdrop-color: @iridescence_solid_secondary_sidebar_backdrop_color;
 }
-window.view { background-color: alpha(@iridescence_solid_view_bg_color, ${OPACITY[transparency]}); }
+window.view { background-color: alpha(@iridescence_solid_view_bg_color, ${opacity / 100}); }
 window.nautilus-file-chooser { background-color: @iridescence_solid_window_bg_color; }
 window.nautilus-file-chooser.view { background-color: @iridescence_solid_view_bg_color; }
 .resources-columnview { background-color: @view_bg_color; }
@@ -303,32 +252,27 @@ scale:not(.color) > trough > slider, switch > slider { --view-bg-color: @iridesc
 button.opaque, menubutton.opaque, splitbutton.opaque { --window-bg-color: @iridescence_solid_window_bg_color; }
 banner, infobar { --window-bg-color: @iridescence_solid_window_bg_color; --sidebar-bg-color: @iridescence_solid_sidebar_bg_color; --secondary-sidebar-bg-color: @iridescence_solid_secondary_sidebar_bg_color; }
 dnd tab { --headerbar-bg-color: @iridescence_solid_headerbar_bg_color; }
+
 `) + `
-:root { --iridescence-edge-color: color-mix(in srgb, @accent_bg_color ${3.75 * TINTS[tint]}%, rgba(0, 0, 0, 0.12)); --iridescence-edge: 1px solid var(--iridescence-edge-color); --iridescence-shadow: drop-shadow(0 1px 4px rgba(0, 0, 0, 0.08)); --sidebar-border-color: var(--iridescence-edge-color); --secondary-sidebar-border-color: var(--iridescence-edge-color); }
-@media (prefers-color-scheme: dark) { :root { --iridescence-edge-color: color-mix(in srgb, @accent_bg_color ${5 * TINTS[tint]}%, rgba(255, 255, 255, 0.12)); --iridescence-shadow: drop-shadow(0 1px 4px rgba(0, 0, 0, 0.16)); } }
-button { --iridescence-button-edge: var(--iridescence-edge); --iridescence-button-shadow: var(--iridescence-shadow); }
-${flat.join(', ')} { --iridescence-button-edge: none; --iridescence-button-shadow: none; }
-${flat.flatMap(selector => [':hover', ':active', ':checked', '.keyboard-activating'].map(state => selector + state)).join(', ')} { --iridescence-button-edge: var(--iridescence-edge); --iridescence-button-shadow: var(--iridescence-shadow); }
+/* Native contrast strokes; midpoint strength and 1px outlines. */
+button.link, button.inline, button.accent-button, button.suggested-action, button.destructive-action, button.opaque { box-shadow: none; }
+button { box-shadow: inset 0 0 0 1px color-mix(in srgb, currentColor 25%, transparent); }
+${flat.join(', ')} { box-shadow: none; }
+${flat.flatMap(selector => [':hover', ':active', ':checked', '.keyboard-activating'].map(state => selector + state)).join(', ')} { box-shadow: inset 0 0 0 1px color-mix(in srgb, currentColor 25%, transparent); }
+columnview > header > button, treeview > header > button, tabthumbnail button,
+bottom-sheet > sheet > stack > button, windowcontrols > button:not(.raised):not(.suggested-action):not(.destructive-action):not(.opaque):not(.card) { box-shadow: none; }
+menubutton.suggested-action > button:not(.card):not(.link):not(.inline):not(.accent-button), splitbutton.suggested-action button:not(.card):not(.link):not(.inline):not(.accent-button),
+menubutton.opaque > button:not(.card):not(.link):not(.inline):not(.accent-button), splitbutton.opaque button:not(.card):not(.link):not(.inline):not(.accent-button), spinbutton > button.image-button:not(.card):not(.link):not(.inline):not(.accent-button) { box-shadow: none; }
+splitbutton.suggested-action > menubutton > button:not(.card):not(.link):not(.inline):not(.accent-button):dir(ltr),
+splitbutton.opaque > menubutton > button:not(.card):not(.link):not(.inline):not(.accent-button):dir(ltr) { box-shadow: inset 1px 0 color-mix(in srgb, currentColor 55%, transparent); }
+splitbutton.suggested-action > menubutton > button:not(.card):not(.link):not(.inline):not(.accent-button):dir(rtl),
+splitbutton.opaque > menubutton > button:not(.card):not(.link):not(.inline):not(.accent-button):dir(rtl) { box-shadow: inset -1px 0 color-mix(in srgb, currentColor 55%, transparent); }
+button:drop(active) { box-shadow: inset 0 0 0 1px var(--accent-bg-color, @accent_bg_color); }
+button.card:drop(active) { box-shadow: inset 0 0 0 1px var(--accent-bg-color, @accent_bg_color); }
 @media (prefers-contrast: no-preference) {
 window.csd { outline-color: color-mix(in srgb, @accent_bg_color ${3.5 * TINTS[tint]}%, rgba(255, 255, 255, 0.25)); }
 @media (prefers-color-scheme: dark) { window.csd { outline-color: color-mix(in srgb, @accent_bg_color ${5 * TINTS[tint]}%, rgba(255, 255, 255, 0.12)); } }
 }
-${button} { outline: var(--iridescence-button-edge); outline-offset: -1px; filter: var(--iridescence-button-shadow); }
-columnview > header > ${button}, treeview > header > ${button}, tabthumbnail ${button}, bottom-sheet > sheet > stack > ${button}, windowcontrols > ${button} { outline: none; filter: none; }
-${['columnview', 'treeview'].flatMap(view => [':hover', ':active'].map(state => `${view} > header > ${button}${state}`)).join(', ')} { outline: var(--iridescence-edge); outline-offset: -1px; filter: var(--iridescence-shadow); }
-menubutton.suggested-action:not(:disabled):not(:focus-within), splitbutton.suggested-action:not(:disabled):not(:focus-within),
-menubutton.opaque:not(:disabled):not(:focus-within), splitbutton.opaque:not(:disabled):not(:focus-within),
-windowcontrols > ${button} > image,
-entry:not(.flat):not(:disabled):not(:focus-within), spinbutton:not(.flat):not(:disabled):not(:focus-within), .floating-bar { outline: var(--iridescence-edge); outline-offset: -1px; filter: var(--iridescence-shadow); }
-menubutton.suggested-action > ${button}, splitbutton.suggested-action ${button}, menubutton.opaque > ${button}, splitbutton.opaque ${button}, spinbutton ${button} { outline: none; filter: none; }
-${highlights.join(', ')}, .nautilus-pathbar { outline: var(--iridescence-edge); outline-offset: -1px; filter: var(--iridescence-shadow); }
-.nautilus-pathbar ${button}, popover.menu list > row:selected:not(:hover):not(:active):not(.has-open-popup):not(:disabled):not(:focus-visible):not(:drop(active)), popover.menu listview > row:selected:not(:hover):not(:active):not(.has-open-popup):not(:disabled):not(:focus-visible):not(:drop(active)) { outline: none; filter: none; }
-.card, list.boxed-list, list.content, list.boxed-list-separate > row, dnd tab { outline: var(--iridescence-edge); outline-offset: 0; }
-toast { outline: var(--iridescence-edge); outline-offset: -1px; }
-@media (prefers-color-scheme: dark) { scrollbar { --scrollbar-outline-color: white; } }
-switch:not(:disabled):not(:focus-visible) { outline: var(--iridescence-edge); outline-offset: -1px; }
-scale:not(:disabled) { ---slider-border-color: var(--iridescence-edge-color); }
-calendar > grid > label.day-number:selected:not(:focus), calendar > grid > label.day-number:checked:not(:focus),
-checkbutton:not(:disabled):not(:focus-visible) > check, checkbutton:not(:disabled):not(:focus-visible) > radio { outline: var(--iridescence-edge); outline-offset: -1px; filter: var(--iridescence-shadow); }
-`;
+` + GTK_CONTRAST;
+    return makeGtkShadows(flat, styled);
 }
