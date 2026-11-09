@@ -51,7 +51,7 @@ const main = {panel, sessionMode: {...signals(), colorScheme: 'prefer-dark', cur
     loadTheme: () => reloads++, getStyleVariant: () => main.sessionMode.colorScheme === 'force-dark' ? 'dark' : main.sessionMode.colorScheme === 'prefer-light'
         ? st.colorScheme === 1 ? 'dark' : 'light' : st.colorScheme === 2 ? 'light' : 'dark'};
 class Extension {
-    constructor() { this.dir = file('/source'); }
+    constructor() { this.path = '/source'; this.dir = file(this.path); }
     getSettings() {
         let pending = null;
         const instance = {...settings,

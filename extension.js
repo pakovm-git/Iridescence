@@ -217,7 +217,7 @@ export default class Iridescence extends Extension {
             if (this._gtkStyle?.query_exists(null)) {
                 writeText(this._gtkStyle, '/* Iridescence is disabled. */\n');
                 // A delayed GTK refresh is required; Shell timers must end in disable().
-                Gio.Subprocess.new(['gjs', '-m', this.dir.get_child('gtk-refresh-helper.js').get_path()], Gio.SubprocessFlags.NONE);
+                Gio.Subprocess.new(['gjs', '-m', `${this.path}/gtk-refresh-helper.js`], Gio.SubprocessFlags.NONE);
             }
         } catch (error) { console.error(`Iridescence could not clear its GTK appearance: ${error.message}`); }
         this._gtkRefresh?.destroy();
